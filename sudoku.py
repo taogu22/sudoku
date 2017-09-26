@@ -1,1 +1,53 @@
-def sudokuSol(clue,n=9,Elimination=False):### INPUT:##### clue = list. Contains all the sudoku clues. Unknown information is denoted by 0.##### n = number. The size of sudoku.##### Elimination = True/False. When True: Delete impossible clauses before doing pycosat.### OUTPUT:##### A list of numbers, in the form "grid number*10+solution".    import math    import numpy as np    import itertools    import pycosat### SET PARAMETERS    x = list(range(1,n**2+1))        # a list of all the grid numbers, from 1 to 81    block_l = int(math.sqrt(n))       # size of a block    k = 10**len(str(n))       # parameter for dividing grid number and solution    given = {i+1: int(clue[i]) for i in range(len(clue)) if clue[i]!=0}       # convert the clue from list to dictionary    given1 = [key*k+given[key] for key in given]       # only used when Elimination is True: a list of all the known grids and correspoding solutions.    pre = [[key*k+given[key]] for key in given]       # convert the clue from list to the form used in pycolist### RULE1: 1-9 ALL IN EACH BLOCK/ROW/COLUMN    rule1 = []    matrix = np.array(np.array_split(x,n))    condition_matrix = np.vstack((matrix,matrix.transpose(),matrix.reshape(block_l,block_l,block_l,block_l).transpose(0, 2, 1, 3).reshape(n,n)))        # put all the rows & columns & blocks into condition matrix    for c in condition_matrix:        if Elimination == True:            eliminent = set(c).intersection(given)            # a set of eliminated grids            c = [ele for ele in c if ele not in eliminent]            # eliminate given grids from one block/row/column            xc = [ele for ele in range(1,n+1) if ele not in [given[key] for key in eliminent]]            # eliminate the correspoding given solutions from 1-9        else:            xc= range(1,n+1)            # solutions are to be picked from 1-9        condition = [(np.array(c)*k+a).tolist() for a in xc]        # for each possible solution, it is: in grid1 or in grid2 or in grid3 ...or in grid 9.        rule1.extend(condition)### RULE2: ONLY 1 NUMBER IN EACH GRID    rule2 = []    gridlist0 = np.array_split([k*grid[0]+grid[1] for grid in itertools.product(x,range(1,n+1))],n**2)    # in this form: [[11, 12, 13, 14, 15, 16, 17, 18, 19],[21, 22, 23, 24, 25, 26, 27, 28, 29],...]     # an element in this list indicates the possiblities one gird may have    if Elimination == True:        gridlist = [grid for grid in gridlist0 if len(set(grid).intersection(set(given1)))==0]        # eliminate one element from the list if the element contain known information    else:        gridlist = gridlist0    for gridcondition in gridlist:        rule2.extend([[-int(grid[0]),-int(grid[1])] for grid in itertools.combinations(gridcondition,2)])        # transform "11->(-12 and -13 and -14 ... and -19)" into "(-11 or -12) and (-11 or -13) and ... and (-11 or -19)"### CALCULATE SOLUTIONS        result = pycosat.solve(pre+rule1+rule2)    if type(result) != str:        solution = [sol for sol in pycosat.solve(pre+rule1+rule2) if sol>0]        # delete all the unrelated answers, so the list only contains the answer for the 81 grids    else:        solution = result        # for the case that there is no answer    return solution
+def sudoku(clue):
+### INPUT:
+##### clue = list. Contains all the sudoku clues. Unknown information is denoted by 0.
+##### n = number. The size of sudoku.
+##### Elimination = True/False. When True: Delete impossible clauses before doing pycosat.
+### OUTPUT:
+##### A list of numbers, in the form "grid number*10+solution".
+### SET PARAMETERS
+    import numpy as np
+    import itertools
+    import pycosat
+    x = range(1,82)
+    n = range(1,10)
+    matrix = np.array(x)
+    matrix_n = np.array(n)
+       # a list of all the grid numbers, from 1 to 81
+    pre = [[(i+1)*10+int(clue[i])] for i in range(len(clue)) if clue[i]!=0]
+       # convert the clue from list to the form used in pycolist
+### RULE1: 1-9 ALL IN EACH BLOCK/ROW/COLUMN
+    matrix = matrix.reshape(9,9)
+    condition_matrix = np.vstack((matrix,matrix.transpose(),matrix.reshape(3,3,3,3).transpose(0, 2, 1, 3).reshape(9,9))).repeat(9,axis=0)
+        # put all the rows & columns & blocks into condition matrix
+    a = np.tile(matrix_n,27).reshape(243,-1)
+        # for each possible solution, it is: in grid1 or in grid2 or in grid3 ...or in grid 9.
+    rule1 = (condition_matrix*10+a).tolist()
+### RULE2: ONLY 1 NUMBER IN EACH GRID
+    rule2 = []
+    grid_matrix = matrix.reshape(81,-1).repeat(9,axis=1)*10 + matrix_n
+    # in this form: [[11, 12, 13, 14, 15, 16, 17, 18, 19],[21, 22, 23, 24, 25, 26, 27, 28, 29],...]
+     # an element in this list indicates the possiblities one gird may have
+    for gridcondition in grid_matrix:
+        rule2.extend([[-int(grid[0]),-int(grid[1])] for grid in itertools.combinations(gridcondition,2)])
+        # transform "11->(-12 and -13 and -14 ... and -19)" into "(-11 or -12) and (-11 or -13) and ... and (-11 or -19)"
+### CALCULATE SOLUTIONS
+        result = pycosat.solve(pre+rule1+rule2)
+    if type(result) != str:
+        solution = [sol for sol in pycosat.solve(pre+rule1+rule2) if sol>0]
+        # delete all the unrelated answers, so the list only contains the answer for the 81 grids
+    else:
+        solution = result
+        # for the case that there is no answer
+    return solution
+
+def clue_plus_one(clue):
+    import numpy as np
+    clues = []
+    solution = list(map(lambda x:int(str(x)[-1]),sudoku(clue)))
+    for i in range(len(solution)):
+        if clue[i]==0:
+            c = np.array(clue)
+            c[i] = solution[i]
+            clues.append(c.tolist())
+    return clues
