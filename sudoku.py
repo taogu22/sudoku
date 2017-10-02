@@ -1,7 +1,8 @@
 def sudoku(clue):
-### implemented for 9x9 Sudoku problem.
 ### INPUT:
-##### clue = list (length: 81). Contains all the sudoku clues. Unknown information is denoted by 0.
+##### clue = list. Contains all the sudoku clues. Unknown information is denoted by 0.
+##### n = number. The size of sudoku.
+##### Elimination = True/False. When True: Delete impossible clauses before doing pycosat.
 ### OUTPUT:
 ##### A list of numbers, in the form "grid number*10+solution".
 ### SET PARAMETERS
@@ -49,4 +50,23 @@ def clue_plus_one(clue):
             c = np.array(clue)
             c[i] = solution[i]
             clues.append(c.tolist())
+    return clues
+
+def clue_plus_n(clue12,solution123,cob_list):
+    import itertools
+    import numpy as np
+    clues = []
+    for cob in cob_list:
+        flag = 0
+        for ccc in cob:
+            if clue12[ccc]!=0:
+                flag = 1
+                break
+        if flag == 0:
+            A1 = np.array(clue12)
+            for ccc in cob:
+                A1[ccc]=solution123[ccc]
+            clues.append(A1.tolist())
+        if len(clues)==10:
+            break
     return clues
