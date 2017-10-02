@@ -1,8 +1,7 @@
 def sudoku(clue):
+### implemented for 9x9 Sudoku problem.
 ### INPUT:
-##### clue = list. Contains all the sudoku clues. Unknown information is denoted by 0.
-##### n = number. The size of sudoku.
-##### Elimination = True/False. When True: Delete impossible clauses before doing pycosat.
+##### clue = list (length: 81). Contains all the sudoku clues. Unknown information is denoted by 0.
 ### OUTPUT:
 ##### A list of numbers, in the form "grid number*10+solution".
 ### SET PARAMETERS
